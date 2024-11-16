@@ -1,15 +1,16 @@
-use std::time::Duration;
 use csv::ReaderBuilder;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
+use std::env;
 use std::error::Error;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
-use tokio::sync::Mutex;
+use std::time::Duration;
 use tokio::sync::mpsc;
-use serde_json::json;
+use tokio::sync::Mutex;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct SqlLog {
@@ -23,19 +24,20 @@ struct SqlLog {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let file_path = "sql_logs.tsv";
-    let elastic_url = "http://127.0.0.1:9200/sql_logs/_bulk";
+    let elastic_url =
+        env::var("ELASTIC_URL").expect("ELASTIC_URL must be set in environment variables");
+    let elastic_url = format!("{}/sql_logs/_bulk", elastic_url);
+    //let elastic_url = "http://127.0.0.1:9200/sql_logs/_bulk";
 
     //let client = Client::new();
-    let client = Client::builder()
-    .timeout(Duration::from_secs(10))
-    .build()?;
+    let client = Client::builder().timeout(Duration::from_secs(10)).build()?;
 
     let mut rdr = ReaderBuilder::new().delimiter(b'\t').from_path(file_path)?;
 
     let counter = Arc::new(AtomicUsize::new(0));
     let stdout_mutex = Arc::new(Mutex::new(()));
 
-    process_records(&client, &mut rdr, elastic_url, counter, stdout_mutex).await?;
+    process_records(&client, &mut rdr, &elastic_url, counter, stdout_mutex).await?;
 
     Ok(())
 }
@@ -57,7 +59,9 @@ async fn process_records<R: std::io::Read>(
         while let Some(record) = rx.recv().await {
             bulk_records.push(record);
             if bulk_records.len() >= 1000 {
-                if let Err(e) = send_bulk_to_elasticsearch(&client, &elastic_url, &bulk_records).await {
+                if let Err(e) =
+                    send_bulk_to_elasticsearch(&client, &elastic_url, &bulk_records).await
+                {
                     eprintln!("Failed to send bulk records: {}", e);
                 }
                 bulk_records.clear();
