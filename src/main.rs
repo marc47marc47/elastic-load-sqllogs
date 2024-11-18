@@ -106,7 +106,8 @@ async fn send_bulk_to_elasticsearch(
         let data = serde_json::to_string(record)?;
         bulk_body.push_str(&format!("{}\n{}\n", action, data));
     }
-    println!("Sending bulk request to: {}", elastic_url); // 添加这一行
+    //println!("Sending bulk request to: {}", elastic_url); // 添加这一行
+    print!("="); // 添加这一行
 
     let response = client
         .post(elastic_url)
