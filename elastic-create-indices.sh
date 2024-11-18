@@ -1,4 +1,4 @@
-curl -X PUT "localhost:9200/sql_logs" -H "Content-Type: application/json" -d '{
+curl -X PUT "${ELASTIC_URL}/sql_logs?pretty" -H "Content-Type: application/json" -d '{
   "mappings": {
     "properties": {
       "conn_hash": { "type": "keyword", "doc_values": true },

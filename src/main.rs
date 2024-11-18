@@ -41,7 +41,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //let elastic_url = "http://127.0.0.1:9200/sql_logs/_bulk";
 
     //let client = Client::new();
-    let client = Client::builder().timeout(Duration::from_secs(10)).build()?;
+    let client = Client::builder()
+        .timeout(Duration::from_secs(2000))
+        .build()?;
 
     let mut rdr = ReaderBuilder::new().delimiter(b'\t').from_path(file_path)?;
 
@@ -60,7 +62,7 @@ async fn process_records<R: std::io::Read>(
     counter: Arc<AtomicUsize>,
     stdout_mutex: Arc<Mutex<()>>,
 ) -> Result<(), Box<dyn Error>> {
-    let (tx, mut rx) = mpsc::channel(100);
+    let (tx, mut rx) = mpsc::channel(200);
 
     let client = client.clone();
     let elastic_url = elastic_url.to_string();
@@ -69,7 +71,7 @@ async fn process_records<R: std::io::Read>(
         let mut bulk_records = Vec::new();
         while let Some(record) = rx.recv().await {
             bulk_records.push(record);
-            if bulk_records.len() >= 1000 {
+            if bulk_records.len() >= 2000 {
                 if let Err(e) =
                     send_bulk_to_elasticsearch(&client, &elastic_url, &bulk_records).await
                 {
