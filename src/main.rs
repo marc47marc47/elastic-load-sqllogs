@@ -14,6 +14,17 @@ use tokio::sync::Mutex;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct SqlLog {
+    conn_hash: String,
+    stmt_id: u64,
+    exec_id: u64,
+    exec_time: String,
+    sql_type: String,
+    exe_status: String,
+    db_ip: String,
+    client_ip: String,
+    client_host: String,
+    app_name: String,
+    db_user: String,
     sql_hash: String,
     from_tbs: String,
     select_cols: String,
